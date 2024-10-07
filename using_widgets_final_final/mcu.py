@@ -6,6 +6,7 @@ from PySide6.QtCore import QThread, Signal
 import serial
 import time
 import logging
+import random
 
 
 logging.basicConfig(
@@ -16,17 +17,31 @@ logging.basicConfig(
 
 class FakeCommunicationTread(QThread):
     data_received = Signal(str)
-    send_data_signal = Signal(str)
+    send_data_signal = Signal(str, str)
+    send_request_signal = Signal(str)
 
     def __init__(self):
         super().__init__()
         self.ports = []
         self.active_port = None
         self.request = None
-        self.send_data_signal.connect(lambda: self.send_data_new(self.active_port, self.request))
+        self.send_data_signal.connect(self.send_data_new)
+        # self.send_data_signal.connect(lambda: self.send_data_new(self.active_port, self.request))
 
     def run(self):
-        pass
+        while True:
+            if self.request:
+                logging.info('Message `%s` was sent to <%s>.', self.request, self.active_port)
+                logging.info('Waiting for answer ...')
+                time.sleep(1)
+                logging.info('Answer was received from <%s>: %s', self.active_port, self.request)
+                self.data_received.emit(self.request)
+                self.request = None
+                # t = random.randint(1, 5)
+                # print(f'Sleeping {t} seconds...')
+                # time.sleep(t)
+                # self.data_received.emit(self.request)
+                # self.request = None
 
     def check_available_ports(self) -> list:
         return [
@@ -42,12 +57,12 @@ class FakeCommunicationTread(QThread):
 
     def send_data_new(self, ser, data) -> None:
         self.request = data
-        logging.info('Message `%s` was sent to <%s>.', data, self.active_port)
-        logging.info('Waiting for answer ...')
-        time.sleep(1)
-        logging.info('Answer was received from <%s>: %s', self.active_port, data)
-        self.data_received.emit(data)
-        self.request = None
+        # logging.info('Message `%s` was sent to <%s>.', data, self.active_port)
+        # logging.info('Waiting for answer ...')
+        # time.sleep(1)
+        # logging.info('Answer was received from <%s>: %s', self.active_port, data)
+        # self.data_received.emit(data)
+        # self.request = None
         return data
 
     def close_connection(self, ser) -> None:
