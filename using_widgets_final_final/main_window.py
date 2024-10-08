@@ -34,14 +34,13 @@ class MainWindow(QMainWindow, MainWindowGUI):
         self.init_gui()
 
         # self.arduino_com = ArduinoCommunication()
-        # self.arduino_com = FakeCommunicationTread()
-        # self.arduino_com.data_received.connect(self.test_thread)
+        self.arduino_com = FakeCommunicationTread()
+        self.arduino_com.data_received.connect(self.test_thread)
         # self.arduino_com.start()
 
-        # self.response = Communicate()
         self.response = None
         self.connection = None
-        # self.update_ports()
+        self.update_ports()
         self.btn_refresh.clicked.connect(self.update_ports)
 
         # self.btn_generate.pressed.connect(lambda: self.btn_generate.setDisabled(True))
@@ -73,7 +72,7 @@ class MainWindow(QMainWindow, MainWindowGUI):
         self.spb_intensity.setValue(3)
         self.spb_frequency.setValue(0)
         if self.connection:
-            self.btn_stop.setDisabled(True)
+            # self.btn_stop.setDisabled(True)
             self.send_to_mcu_new()
 
     def disconnect(self):
@@ -81,10 +80,7 @@ class MainWindow(QMainWindow, MainWindowGUI):
             self.arduino_com.close_connection(self.connection)
 
     def connect_to_port(self):
-        self.arduino_com = FakeCommunicationTread()
-        self.arduino_com.data_received.connect(self.test_thread)
         self.arduino_com.start()
-        self.update_ports()
 
         port = self.cbx_port.currentText()
         baudrate = self.cbx_baudrate.currentText()
@@ -95,19 +91,22 @@ class MainWindow(QMainWindow, MainWindowGUI):
     def choose_single_pulse_mode(self):
         self.lbl_frequency.setText('Duration, μs:')
         self.spb_frequency.setDisabled(False)
-        self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
+        if self.connection:
+            self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
 
 
     def choose_periodic_mode(self):
         self.lbl_frequency.setText('Frequency, Hz:')
         self.spb_frequency.setDisabled(False)
-        self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
+        if self.connection:
+            self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
 
 
     def choose_continuous_mode(self):
         self.lbl_frequency.setText('')
         self.spb_frequency.setDisabled(True)
-        self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
+        if self.connection:
+            self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
         
 
     def on_focus_out(self, event):
