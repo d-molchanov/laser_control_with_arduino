@@ -76,12 +76,11 @@ class MainWindow(QMainWindow, MainWindowGUI):
             self.send_to_mcu_new()
 
     def disconnect(self):
-        if self.connection:
-            self.arduino_com.close_connection(self.connection)
+        self.arduino_com.close_connection()
 
     def connect_to_port(self):
         self.arduino_com.start()
-
+        
         port = self.cbx_port.currentText()
         baudrate = self.cbx_baudrate.currentText()
         self.connection = self.arduino_com.connect_to_port(port, baudrate)
@@ -183,6 +182,10 @@ class MainWindow(QMainWindow, MainWindowGUI):
         pins_state = [(value>>i) & 1 for i in range(11, -1, -1)]    
         for el, pin in zip(pins_state, self.pins[1:11]):
             pin.setCheckBoxState(el)
+
+    def closeEvent(self, *args, **kwargs):
+        self.arduino_com.running = False
+        self.arduino_com.wait()
 
 
 def test() -> None:

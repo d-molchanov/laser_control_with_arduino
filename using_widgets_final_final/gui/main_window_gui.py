@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QFrame
 from PySide6.QtWidgets import QGroupBox
 from PySide6.QtWidgets import QRadioButton
 from PySide6.QtWidgets import QStyle
+from PySide6.QtCore import Qt
 
 
 class PinWidget(QWidget):
@@ -21,11 +22,11 @@ class PinWidget(QWidget):
         super().__init__()
         self.chx_mcu_pin = QCheckBox(self)
         self.chx_mcu_pin.setText('')
-        # self.chx_mcu_pin.setStyleSheet('QCheckBox::indicator { background-color: #00d4aa; }')
         self.chx_mcu_pin.setDisabled(True)
         self.lbl_mcu_pin = QLabel()
         self.lbl_laser_pin = QLabel()
         vbox = QVBoxLayout()
+        # vbox.setAlignment(Qt.AlignRight)
         vbox.addWidget(self.lbl_mcu_pin)
         vbox.addWidget(self.chx_mcu_pin)
         vbox.addWidget(self.lbl_laser_pin)
@@ -49,18 +50,63 @@ class MainWindowGUI:
         # self.init_gui()
 
     def init_gui(self):
-        # self.setStyleSheet('QWidget { border: 1px solid #000000; }')
         self.setWindowTitle('Laser Control with Arduino')
         self.setMinimumSize(400, 100)
+
+        vbox = QVBoxLayout()
+        vbox.setSpacing(0)
+
+        vbox_connection = QVBoxLayout()
+        vbox_connection.setSpacing(0)
+
+        hbox_mode_and_control = QHBoxLayout()
+        hbox_mode_and_control.setContentsMargins(0, 0, 0, 0)
+        hbox_mode_and_control.setSpacing(0)
+
+        self.gbx_connection = QGroupBox('Connection')
+        self.gbx_connection.setFixedWidth(210)
+
+        hbox_baud_rate = QHBoxLayout()
+        # hbox_baud_rate.setSpacing(0)
+        hbox_baud_rate.setContentsMargins(0, 0, 0, 0)
+
+        hbox_baud_rate.addStretch(1)
+        hbox_baud_rate.addWidget(QLabel('Baud rate:'))
+        # hbox_baud_rate.addSpacing(4)
+
+        self.cbx_baudrate = QComboBox(self)
+        self.cbx_baudrate.setFixedWidth(120)
+        self.cbx_baudrate.addItems(['4800', '9600', '38400', '57600', '115200'])
+        self.cbx_baudrate.setCurrentIndex(1)
+        hbox_baud_rate.addWidget(self.cbx_baudrate)
+
+        hcontainer_baud_rate = QWidget(self)
+        hcontainer_baud_rate.setLayout(hbox_baud_rate)
+        vbox_connection.addWidget(hcontainer_baud_rate)
+        vbox_connection.addSpacing(4)
+
+        hbox_port = QHBoxLayout()
+        hbox_port.setContentsMargins(0, 0, 0, 0)
+        hbox_port.addWidget(QLabel('Port:'))
+        # hbox_port.addSpacing(4)
+        # hbox_port.addStretch(1)
         self.cbx_port = QComboBox(self)
+        self.cbx_port.setFixedWidth(100)
+
+        hbox_port.addWidget(self.cbx_port)
+        
         self.btn_refresh = QPushButton('', self)
         self.btn_refresh.setToolTip('Refresh')
         self.btn_refresh.setIcon(self.style().standardIcon(QStyle.SP_BrowserReload))
-        self.cbx_baudrate = QComboBox(self)
-        self.cbx_baudrate.addItems(['4800', '9600', '38400', '57600', '115200'])
-        self.cbx_baudrate.setCurrentIndex(1)
+        hbox_port.addWidget(self.btn_refresh)
+
+        hcontainer_port = QWidget(self)
+        hcontainer_port.setLayout(hbox_port)
+        vbox_connection.addWidget(hcontainer_port)
+        vbox_connection.addSpacing(4)
+
         self.spb_frequency = QSpinBox(self)
-        self.spb_frequency.setRange(1, 1000)
+        self.spb_frequency.setRange(1, 16000)
         self.spb_frequency.setSingleStep(1)
         self.spb_intensity = QSpinBox(self)
         self.spb_intensity.setRange(3, 4095)    
@@ -73,42 +119,6 @@ class MainWindowGUI:
         # self.spb_intensity.setSizePolicy(QSizePolicy.PolicyFlag.IgnoreFlag, QSizePolicy.PolicyFlag.IgnoreFlag)
         self.spb_intensity.setFixedWidth(100)
         self.spb_frequency.setFixedWidth(100)
-        vbox = QVBoxLayout()
-        vbox.setSpacing(0)
-        self.gbx_connection = QGroupBox('Connection')
-        self.gbx_connection.setFixedWidth(200)
-        vbox_connection = QVBoxLayout()
-        vbox_connection.setSpacing(0)
-        # vbox_connection.setContentsMargins(0, 0, 0, 0)
-        # vbox_connection.setSpacing(8)
-        # vbox_connection.addStretch(1)
-        hbox_baud_rate = QHBoxLayout()
-        # hbox_baud_rate.setSpacing(0)
-        hbox_baud_rate.setContentsMargins(0, 0, 0, 0)
-
-        hbox_baud_rate.addStretch(1)
-        hbox_baud_rate.addWidget(QLabel('Baud rate:'))
-        # hbox_baud_rate.addSpacing(4)
-        hbox_baud_rate.addWidget(self.cbx_baudrate)
-        self.cbx_baudrate.setFixedWidth(120)
-        hcontainer_baud_rate = QWidget(self)
-        hcontainer_baud_rate.setLayout(hbox_baud_rate)
-        vbox_connection.addWidget(hcontainer_baud_rate)
-        vbox_connection.addSpacing(4)
-        hbox_port = QHBoxLayout()
-        hbox_port.setContentsMargins(0, 0, 0, 0)
-        hbox_port.addWidget(QLabel('Port:'))
-        # hbox_port.addSpacing(4)
-        # hbox_port.addStretch(1)
-        hbox_port.addWidget(self.cbx_port)
-        # self.cbx_port.sizePolicy().setHorizontalPolicy(QSizePolicy.Maximum)
-        self.cbx_port.setFixedWidth(100)
-        hbox_port.addWidget(self.btn_refresh)
-        hcontainer_port = QWidget(self)
-        hcontainer_port.setLayout(hbox_port)
-        # hcontainer_port.setFixedWidth(120)
-        vbox_connection.addWidget(hcontainer_port)
-        vbox_connection.addSpacing(4)
         # hbox_port.addSpacing(4)
         hbox_connect = QHBoxLayout()
         hbox_connect.addWidget(self.btn_connect)
@@ -124,9 +134,7 @@ class MainWindowGUI:
         # vbox.addWidget(self.gbx_connection)
         # vbox.addSpacing(4)
 
-        hbox_mode_and_control = QHBoxLayout()
-        hbox_mode_and_control.setContentsMargins(0, 0, 0, 0)
-        hbox_mode_and_control.setSpacing(0)
+
 
         self.gbx_mode = QGroupBox('Mode')
         self.rbt_single_pulse = QRadioButton('Single Pulse')

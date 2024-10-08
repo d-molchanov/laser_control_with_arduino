@@ -71,6 +71,7 @@ class FakeCommunicationTread(QThread):
             logging.info('Port <%s> was closed.', self.active_port)
             self.active_port = None
             self.running = False
+            self.wait()
 
     def send_data(self, port, baud_rate, data) -> None:
         try:
