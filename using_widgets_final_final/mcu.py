@@ -25,11 +25,12 @@ class FakeCommunicationTread(QThread):
         self.ports = []
         self.active_port = None
         self.request = None
+        self.running = True
         self.send_data_signal.connect(self.send_data_new)
         # self.send_data_signal.connect(lambda: self.send_data_new(self.active_port, self.request))
 
     def run(self):
-        while True:
+        while self.running:
             if self.request:
                 logging.info('Message `%s` was sent to <%s>.', self.request, self.active_port)
                 logging.info('Waiting for answer ...')
@@ -65,9 +66,11 @@ class FakeCommunicationTread(QThread):
         # self.request = None
         return data
 
-    def close_connection(self, ser) -> None:
-        logging.info('Port <%s> was closed.', self.active_port)
-        self.active_port = None
+    def close_connection(self) -> None:
+        if self.active_port:
+            logging.info('Port <%s> was closed.', self.active_port)
+            self.active_port = None
+            self.running = False
 
     def send_data(self, port, baud_rate, data) -> None:
         try:
