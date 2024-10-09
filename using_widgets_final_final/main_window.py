@@ -32,7 +32,7 @@ class MainWindow(QMainWindow, MainWindowGUI):
     def __init__(self):
         super().__init__()
         self.init_gui()
-
+        self.STOP_LASER_REQUEST = 't'
         # self.arduino_com = ArduinoCommunication()
         self.arduino_com = FakeCommunicationTread()
         self.arduino_com.data_received.connect(self.test_thread)
@@ -141,7 +141,7 @@ class MainWindow(QMainWindow, MainWindowGUI):
 
         self.update_pins(intensity)
 
-    def create_request(self):
+    def create_request_from_gui(self):
         frequency = self.spb_frequency.value()
         baud_rate = self.cbx_baudrate.currentText()
         intensity = self.spb_intensity.value()
@@ -152,8 +152,11 @@ class MainWindow(QMainWindow, MainWindowGUI):
         else:
             mode = 'c'
             frequency = 0
-        data = f'{mode}{frequency}:{intensity}'
-        return data
+        request = f'{mode}{frequency}:{intensity}'
+        return request
+
+    def send_request_to_mcu(self, request: str) -> None:
+        pass
 
     def send_to_mcu_new(self):
         if self.connection:
