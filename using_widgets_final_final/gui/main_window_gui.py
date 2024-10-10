@@ -41,6 +41,17 @@ class PinWidget(QWidget):
     def setCheckBoxState(self, value: bool):
         self.chx_mcu_pin.setChecked(value)
 
+class IntensitySpinBox(QSpinBox):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def focusOutEvent(self, event):
+        value = self.value()
+        mod4 = value % 4
+        if mod4 != 3:
+            value = (value // 4)*4 + 3
+            self.setValue(value)
+        super().focusOutEvent(event)
 
 class MainWindowGUI:
 
@@ -146,7 +157,7 @@ class MainWindowGUI:
         self.lbl_intensity = QLabel('Intensity:')
         self.lbl_intensity.setFixedWidth(100)
         hbox_intensity.addWidget(self.lbl_intensity)
-        self.spb_intensity = QSpinBox(self)
+        self.spb_intensity = IntensitySpinBox(self)
         self.spb_intensity.setRange(3, 4095)    
         self.spb_intensity.setSingleStep(4)
         self.spb_intensity.setToolTip('3–4095, step 4')
@@ -197,7 +208,7 @@ class MainWindowGUI:
         self.pins.append(PinWidget())
         self.pins[0].setMCUPin('D2(~)')
         self.pins[0].setLaserPin('PIN25')
-        self.pins[0].setCheckBoxState(True)
+        self.pins[0].setCheckBoxState(False)
         for i in range(3, 15):
             self.pins.append(PinWidget())
             self.pins[-1].setMCUPin(f'D{i}')
