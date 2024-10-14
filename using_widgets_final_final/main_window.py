@@ -20,6 +20,7 @@ import logging
 from gui.main_window_gui import MainWindowGUI
 from arduino import ArduinoCommunication
 from mcu import FakeCommunicationTread
+from mcu import MCUCommunicationTread
 
 
 # class Communicate(QObject):
@@ -34,12 +35,13 @@ class MainWindow(QMainWindow, MainWindowGUI):
         self.init_gui()
         self.STOP_LASER_REQUEST = 't'
         # self.arduino_com = ArduinoCommunication()
-        self.arduino_com = FakeCommunicationTread()
+        # self.arduino_com = FakeCommunicationTread()
+        self.arduino_com = MCUCommunicationTread()
         self.arduino_com.data_received.connect(self.receive_response)
         # self.arduino_com.start()
 
         self.response = None
-        self.connection = None
+        # self.connection = None
         self.update_ports()
         self.btn_refresh.clicked.connect(self.update_ports)
 
@@ -58,6 +60,14 @@ class MainWindow(QMainWindow, MainWindowGUI):
 
         )
         self.btn_stop.clicked.connect(self.stop_laser_activity)
+        self.cbx_time_units.currentTextChanged.connect(self.change_duration_range)
+
+    def change_duration_range(self):
+        if self.cbx_time_units.currentText() == 'μs':
+            self.spb_frequency.setRange(1, 16000)
+        if self.cbx_time_units.currentText() == 'ms':
+            self.spb_frequency.setRange(1, 100000)
+
 
     def receive_response(self, data):
         # print(f'{data=}')
@@ -75,7 +85,7 @@ class MainWindow(QMainWindow, MainWindowGUI):
         self.gbx_mode.setEnabled(True)
         self.update_pins(intensity)
 
-        if mode in {'s', 'c'}:
+        if mode in {'s', 'l', 'c'}:
             self.pins[0].setCheckBoxState(True)
         else:
             self.pins[0].setCheckBoxState(False)
@@ -88,10 +98,11 @@ class MainWindow(QMainWindow, MainWindowGUI):
     def stop_laser_activity(self):
         self.spb_intensity.setValue(3)
         self.spb_frequency.setValue(0)
-        if self.connection:
+        if self.arduino_com.active_port:
             # self.btn_stop.setDisabled(True)
             # self.send_to_mcu_new()
-            self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
+            # self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
+            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, 't0:3')
             self.gbx_mode.setDisabled(True)
             self.btn_generate.setDisabled(True)
 
@@ -103,15 +114,14 @@ class MainWindow(QMainWindow, MainWindowGUI):
         
         port = self.cbx_port.currentText()
         baudrate = self.cbx_baudrate.currentText()
-        self.connection = self.arduino_com.connect_to_port(port, baudrate)
-        print(f'After connection: {self.connection = }')
+        self.arduino_com.connect_to_port(port, baudrate)
 
 
     def choose_single_pulse_mode(self):
-        self.lbl_frequency.setText('Duration, μs:')
-        self.spb_frequency.setDisabled(False)
-        if self.connection:
-            self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
+        self.lbl_frequency.setText('Duration:')
+        self.hcontainer_frequency.setDisabled(False)
+        if self.arduino_com.active_port:
+            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, 't0:3')
             self.gbx_mode.setDisabled(True)
             self.btn_generate.setDisabled(True)
 
@@ -120,9 +130,9 @@ class MainWindow(QMainWindow, MainWindowGUI):
 
     def choose_periodic_mode(self):
         self.lbl_frequency.setText('Frequency, Hz:')
-        self.spb_frequency.setDisabled(False)
-        if self.connection:
-            self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
+        self.hcontainer_frequency.setDisabled(False)
+        if self.arduino_com.active_port:
+            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, 't0:3')
             self.gbx_mode.setDisabled(True)
             self.btn_generate.setDisabled(True)
 
@@ -131,9 +141,9 @@ class MainWindow(QMainWindow, MainWindowGUI):
 
     def choose_continuous_mode(self):
         self.lbl_frequency.setText('')
-        self.spb_frequency.setDisabled(True)
-        if self.connection:
-            self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
+        self.hcontainer_frequency.setDisabled(True)
+        if self.arduino_com.active_port:
+            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, 't0:3')
             self.gbx_mode.setDisabled(True)
             self.btn_generate.setDisabled(True)
 
@@ -171,7 +181,10 @@ class MainWindow(QMainWindow, MainWindowGUI):
         baud_rate = self.cbx_baudrate.currentText()
         intensity = self.spb_intensity.value()
         if self.rbt_single_pulse.isChecked():
-            mode = 's'
+            if self.cbx_time_units.currentText() == 'μs':
+                mode = 's'
+            elif self.cbx_time_units.currentText() == 'ms':
+                mode = 'l'
         elif self.rbt_periodic.isChecked():
             mode = 'p'
         else:
@@ -181,10 +194,15 @@ class MainWindow(QMainWindow, MainWindowGUI):
         return request
 
     def send_request_to_mcu(self, request: str) -> None:
-        pass
+        if self.arduino_com.active_port:
+            # self.arduino_com.send_data_signal.emit(self.connection, request)
+            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, request)
+            self.btn_generate.setDisabled(True)
+            self.gbx_mode.setDisabled(True)
+
 
     def send_to_mcu_new(self):
-        if self.connection:
+        if self.arduino_com.active_port:
             # frequency = self.spb_frequency.value()
             # baud_rate = self.cbx_baudrate.currentText()
             # intensity = self.spb_intensity.value()
@@ -198,8 +216,9 @@ class MainWindow(QMainWindow, MainWindowGUI):
             # data = f'{mode}{frequency}:{intensity}'
             data = self.create_request_from_gui()
             print(f'{data = }')
-            print(f'{self.connection = }')
-            self.arduino_com.send_data_signal.emit(self.connection, data)
+            # print(f'{self.connection = }')
+            # self.arduino_com.send_data_signal.emit(self.connection, data)
+            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, data)
             self.btn_generate.setDisabled(True)
             self.gbx_mode.setDisabled(True)
 
