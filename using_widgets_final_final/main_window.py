@@ -18,8 +18,8 @@ import logging
 
 
 from gui.main_window_gui import MainWindowGUI
-from arduino import ArduinoCommunication
-from mcu import FakeCommunicationTread
+# from arduino import ArduinoCommunication
+# from mcu import FakeCommunicationTread
 from mcu import MCUCommunicationTread
 
 
@@ -60,13 +60,20 @@ class MainWindow(QMainWindow, MainWindowGUI):
 
         )
         self.btn_stop.clicked.connect(self.stop_laser_activity)
-        self.cbx_time_units.currentTextChanged.connect(self.change_duration_range)
+        self.cbx_duration_units.currentTextChanged.connect(self.change_duration_range)
+        self.cbx_pause_units.currentTextChanged.connect(self.change_pause_range)
 
     def change_duration_range(self):
-        if self.cbx_time_units.currentText() == 'μs':
+        if self.cbx_duration_units.currentText() == 'μs':
             self.spb_frequency.setRange(1, 16000)
-        if self.cbx_time_units.currentText() == 'ms':
+        if self.cbx_duration_units.currentText() == 'ms':
             self.spb_frequency.setRange(1, 100000)
+
+    def change_pause_range(self):
+        if self.cbx_pause_units.currentText() == 'μs':
+            self.spb_pause.setRange(1, 16000)
+        if self.cbx_pause_units.currentText() == 'ms':
+            self.spb_pause.setRange(1, 100000)
 
 
     def receive_response(self, data):
@@ -118,7 +125,12 @@ class MainWindow(QMainWindow, MainWindowGUI):
 
 
     def choose_single_pulse_mode(self):
-        self.lbl_frequency.setText('Duration:')
+        # self.lbl_frequency.setText('Duration:')
+        self.lbl_pause.setHidden(True)
+        self.spb_pause.setHidden(True)
+        self.cbx_pause_units.setHidden(True)
+        self.lbl_amount.setHidden(True)
+        self.spb_amount.setHidden(True)
         self.hcontainer_frequency.setDisabled(False)
         if self.arduino_com.active_port:
             self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, 't0:3')
@@ -129,8 +141,13 @@ class MainWindow(QMainWindow, MainWindowGUI):
 
 
     def choose_periodic_mode(self):
-        self.lbl_frequency.setText('Frequency, Hz:')
-        self.hcontainer_frequency.setDisabled(False)
+        # self.lbl_frequency.setText('Frequency, Hz:')
+        self.lbl_pause.setHidden(False)
+        self.spb_pause.setHidden(False)
+        self.cbx_pause_units.setHidden(False)
+        self.lbl_amount.setHidden(False)
+        self.spb_amount.setHidden(False)
+        self.hcontainer_frequency.setEnabled(True)
         if self.arduino_com.active_port:
             self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, 't0:3')
             self.gbx_mode.setDisabled(True)
@@ -139,8 +156,9 @@ class MainWindow(QMainWindow, MainWindowGUI):
 
 
 
+
     def choose_continuous_mode(self):
-        self.lbl_frequency.setText('')
+        # self.lbl_frequency.setText('')
         self.hcontainer_frequency.setDisabled(True)
         if self.arduino_com.active_port:
             self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, 't0:3')
