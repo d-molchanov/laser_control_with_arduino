@@ -118,12 +118,14 @@ class MCUCommunicationTread(QThread):
                     logging.info('Message `%s` was sent to <%s>.', self.request, self.active_port)
                     logging.info('Waiting for answer ...')
                     time.sleep(1)
-                    response = [
-                        r.replace(':', ' was set to ') for r in 
-                        self.serial_port.readall().decode('utf-8').split()
-                    ]
-                    logging.info('Answer was received from <%s>: %s, %s, %s', self.active_port, *response)
-                    self.data_received.emit(self.request)
+                    response = self.serial_port.readall().decode('utf-8')
+                    logging.info(response)
+                    # response = [
+                    #     r.replace(':', ' was set to ') for r in 
+                    #     self.serial_port.readall().decode('utf-8').split()
+                    # ]
+                    # logging.info('Answer was received from <%s>: %s, %s, %s', self.active_port, *response)
+                    self.data_received.emit(response)
                 except SerialException as e:
                     logging.error('Port <%s> could not be opened. Check connection.', self.active_port)
                 self.request = None

@@ -66,36 +66,66 @@ class MainWindow(QMainWindow, MainWindowGUI):
     def change_duration_range(self):
         if self.cbx_duration_units.currentText() == 'μs':
             self.spb_frequency.setRange(1, 16000)
+            self.cbx_pause_units.setCurrentIndex(0)
         if self.cbx_duration_units.currentText() == 'ms':
             self.spb_frequency.setRange(1, 100000)
+            self.cbx_pause_units.setCurrentIndex(1)
+
 
     def change_pause_range(self):
         if self.cbx_pause_units.currentText() == 'μs':
             self.spb_pause.setRange(1, 16000)
+            self.cbx_duration_units.setCurrentIndex(0)
         if self.cbx_pause_units.currentText() == 'ms':
             self.spb_pause.setRange(1, 100000)
+            self.cbx_duration_units.setCurrentIndex(1)
+
+    def parse_response(self, response: str, separator: str) -> dict:
+        if not response:
+            return {}
+        splitted_response = response.strip().split(separator)
+        return {
+            'mode': splitted_response[0],
+            'intensity': int(splitted_response[1]),
+            'pulse_duration': int(splitted_response[2]),
+            'pause_duration': int(splitted_response[3]),
+            'iterations': int(splitted_response[4])
+        }
+
 
 
     def receive_response(self, data):
-        # print(f'{data=}')
-        response = data.split(':')
-        mode = 't'
-        frequency = 0
-        intensity = 0
-        if len(response) > 0:
-            if len(response[0]) > 0:
-                mode = response[0][0]
-                frequency = int(response[0][1:])
-        if len(response) > 1:
-            intensity = int(response[1])
-        self.btn_generate.setEnabled(True)
-        self.gbx_mode.setEnabled(True)
-        self.update_pins(intensity)
+        print(f'{data=}')
+        response = self.parse_response(data, ';')
+        print(f'{response = }')
+        if not response:
+            logging.error('There is no response from MCU.')
+        else: 
+            if response['mode'] in ['s', 'l', 'p', 'm', 'c']:
+                self.pins[0].setCheckBoxState(True)
+            else:
+                self.pins[0].setCheckBoxState(False)
+            self.update_pins(response['intensity'])
+            self.btn_generate.setEnabled(True)
+            self.gbx_mode.setEnabled(True)
+        # response = data.split(':')
+        # mode = 't'
+        # frequency = 0
+        # intensity = 0
+        # if len(response) > 0:
+        #     if len(response[0]) > 0:
+        #         mode = response[0][0]
+        #         frequency = int(response[0][1:])
+        # if len(response) > 1:
+        #     intensity = int(response[1])
+        # self.btn_generate.setEnabled(True)
+        # self.gbx_mode.setEnabled(True)
+        # self.update_pins(intensity)
 
-        if mode in {'s', 'l', 'c'}:
-            self.pins[0].setCheckBoxState(True)
-        else:
-            self.pins[0].setCheckBoxState(False)
+        # if mode in {'s', 'l', 'c'}:
+        #     self.pins[0].setCheckBoxState(True)
+        # else:
+        #     self.pins[0].setCheckBoxState(False)
 
 
     @Slot(str)    
@@ -109,7 +139,7 @@ class MainWindow(QMainWindow, MainWindowGUI):
             # self.btn_stop.setDisabled(True)
             # self.send_to_mcu_new()
             # self.arduino_com.send_data_signal.emit(self.connection, 't0:3')
-            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, 't0:3')
+            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, self.STOP_LASER_REQUEST)
             self.gbx_mode.setDisabled(True)
             self.btn_generate.setDisabled(True)
 
@@ -133,7 +163,7 @@ class MainWindow(QMainWindow, MainWindowGUI):
         self.spb_amount.setHidden(True)
         self.hcontainer_frequency.setDisabled(False)
         if self.arduino_com.active_port:
-            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, 't0:3')
+            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, self.STOP_LASER_REQUEST)
             self.gbx_mode.setDisabled(True)
             self.btn_generate.setDisabled(True)
 
@@ -149,7 +179,7 @@ class MainWindow(QMainWindow, MainWindowGUI):
         self.spb_amount.setHidden(False)
         self.hcontainer_frequency.setEnabled(True)
         if self.arduino_com.active_port:
-            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, 't0:3')
+            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, self.STOP_LASER_REQUEST)
             self.gbx_mode.setDisabled(True)
             self.btn_generate.setDisabled(True)
 
@@ -161,7 +191,7 @@ class MainWindow(QMainWindow, MainWindowGUI):
         # self.lbl_frequency.setText('')
         self.hcontainer_frequency.setDisabled(True)
         if self.arduino_com.active_port:
-            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, 't0:3')
+            self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, self.STOP_LASER_REQUEST)
             self.gbx_mode.setDisabled(True)
             self.btn_generate.setDisabled(True)
 
@@ -199,9 +229,9 @@ class MainWindow(QMainWindow, MainWindowGUI):
         baud_rate = self.cbx_baudrate.currentText()
         intensity = self.spb_intensity.value()
         if self.rbt_single_pulse.isChecked():
-            if self.cbx_time_units.currentText() == 'μs':
+            if self.cbx_duration_units.currentText() == 'μs':
                 mode = 's'
-            elif self.cbx_time_units.currentText() == 'ms':
+            elif self.cbx_duration_units.currentText() == 'ms':
                 mode = 'l'
         elif self.rbt_periodic.isChecked():
             mode = 'p'
