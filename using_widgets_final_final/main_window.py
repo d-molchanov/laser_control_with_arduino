@@ -95,9 +95,9 @@ class MainWindow(QMainWindow, MainWindowGUI):
 
 
     def receive_response(self, data):
-        print(f'{data=}')
+        # print(f'{data=}')
         response = self.parse_response(data, ';')
-        print(f'{response = }')
+        # print(f'{response = }')
         if not response:
             logging.error('There is no response from MCU.')
         else: 
@@ -108,6 +108,44 @@ class MainWindow(QMainWindow, MainWindowGUI):
             self.update_pins(response['intensity'])
             self.btn_generate.setEnabled(True)
             self.gbx_mode.setEnabled(True)
+            modes = {
+                't': 'STOP',
+                's': 'SINGLE PULSE',
+                'l': 'SINGLE PULSE',
+                'p': 'PERIODIC',
+                'm': 'PERIODIC',
+                'c': 'CONTINUOUS'
+            }
+            units = ''
+            if response['mode'] in ['s', 'p']:
+                units = 'us'
+            if response['mode'] in ['l', 'm']:
+                units = 'ms'
+            if response['mode'] in ['t', 'c']:
+                logging.info(
+                    '%s mode was set; INT: %s.',
+                    modes[response['mode']],
+                    response['intensity']
+                )
+            else:
+                logging.info(
+                    '%s mode was set; INT: %s; PULSE: %s %s; PAUSE: %s %s; ITER: %s.',
+                    modes[response['mode']],
+                    response['intensity'],
+                    response['pulse_duration'],
+                    units,
+                    response['pause_duration'],
+                    units,
+                    response['iterations']
+                )
+            # logging.info(
+            #     'Mode: %s, intensity: %s, pulse duration: %s, pause duration: %s, iterations: %s',
+            #     modes[response['mode']],
+            #     response['intensity'],
+            #     response['pulse_duration'],
+            #     response['pause_duration'],
+            #     response['iterations']
+            # )
         # response = data.split(':')
         # mode = 't'
         # frequency = 0
@@ -225,20 +263,28 @@ class MainWindow(QMainWindow, MainWindowGUI):
     #     # self.update_pins(intensity)
 
     def create_request_from_gui(self):
-        frequency = self.spb_frequency.value()
+        pulse_duration = self.spb_frequency.value()
         baud_rate = self.cbx_baudrate.currentText()
         intensity = self.spb_intensity.value()
+        pause_duration = 0
+        iterations = 0
         if self.rbt_single_pulse.isChecked():
             if self.cbx_duration_units.currentText() == 'μs':
                 mode = 's'
             elif self.cbx_duration_units.currentText() == 'ms':
                 mode = 'l'
         elif self.rbt_periodic.isChecked():
-            mode = 'p'
+            pause_duration = self.spb_pause.value()
+            iterations = self.spb_amount.value()
+            if self.cbx_duration_units.currentText() == 'μs':
+                mode = 'p'
+            elif self.cbx_duration_units.currentText() == 'ms':
+                mode = 'm'
         else:
             mode = 'c'
-            frequency = 0
-        request = f'{mode}{frequency}:{intensity}'
+            pulse_duration = 0
+        request = f'{mode}{intensity:04d}:{pulse_duration:08d}:{pause_duration:08d}:{iterations:05d}'
+        print(request)
         return request
 
     def send_request_to_mcu(self, request: str) -> None:
@@ -263,7 +309,7 @@ class MainWindow(QMainWindow, MainWindowGUI):
             #     frequency = 0
             # data = f'{mode}{frequency}:{intensity}'
             data = self.create_request_from_gui()
-            print(f'{data = }')
+            # print(f'{data = }')
             # print(f'{self.connection = }')
             # self.arduino_com.send_data_signal.emit(self.connection, data)
             self.arduino_com.send_data_signal.emit(self.arduino_com.active_port, data)

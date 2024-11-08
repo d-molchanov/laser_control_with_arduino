@@ -119,7 +119,7 @@ class MCUCommunicationTread(QThread):
                     logging.info('Waiting for answer ...')
                     time.sleep(1)
                     response = self.serial_port.readall().decode('utf-8')
-                    logging.info(response)
+                    # logging.info(response)
                     # response = [
                     #     r.replace(':', ' was set to ') for r in 
                     #     self.serial_port.readall().decode('utf-8').split()
