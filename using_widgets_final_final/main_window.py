@@ -284,7 +284,7 @@ class MainWindow(QMainWindow, MainWindowGUI):
             mode = 'c'
             pulse_duration = 0
         request = f'{mode}{intensity:04d}:{pulse_duration:08d}:{pause_duration:08d}:{iterations:05d}'
-        print(request)
+        # print(request)
         return request
 
     def send_request_to_mcu(self, request: str) -> None:
